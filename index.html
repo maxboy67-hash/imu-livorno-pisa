@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>IMU Livorno e Pisa</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: colonna unica, modulo a sinistra / ricevuta F24 a destra su desktop, impilati su telefono */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --fg:#17212b; --muted:#5b6876; --line:#d9e0e7;
+  --accent:#8a1c2b; --accent-soft:#f6e7e9; --sea-soft:#e4eef5; --sea:#1f4e6b; --ok:#2d6a4f;
+  --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --surface:#18212a; --fg:#e6ebf0; --muted:#9aa7b4; --line:#2a3642;
+  --accent:#e0737f; --accent-soft:#3a1f25; --sea-soft:#1a2e3c; --sea:#7fb3d5; --ok:#74c69d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --surface:#18212a; --fg:#e6ebf0; --muted:#9aa7b4; --line:#2a3642;
+  --accent:#e0737f; --accent-soft:#3a1f25; --sea-soft:#1a2e3c; --sea:#7fb3d5; --ok:#74c69d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header h1{font-size:1.7rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.tag{display:inline-block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel h2{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.row{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:500}
+label small{color:var(--muted);font-weight:400}
+input,select{font:inherit;font-size:1rem;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%}
+input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible{outline:2px solid var(--sea);outline-offset:1px}
+.check{flex-direction:row;align-items:flex-start;gap:8px;font-weight:400}
+.check input{width:auto;margin-top:4px}
+fieldset{border:1px dashed var(--line);border-radius:8px;padding:12px;margin:0;display:flex;flex-direction:column;gap:12px}
+legend{font-size:.85rem;font-weight:600;padding:0 4px}
+.rate{font-family:var(--mono);font-size:.85rem;color:var(--sea)}
+.receipt{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.big{display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:8px;background:var(--accent-soft)}
+.big span{font-size:.8rem;color:var(--muted)}
+.big strong{font-family:var(--mono);font-size:2rem;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.1}
+.lines{display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.lines div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted var(--line);padding-bottom:5px}
+.lines div span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rate-pill{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-family:var(--mono);font-size:.8rem}
+.f24{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:360px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.note{font-size:.8rem;color:var(--muted);margin:0}
+.notes{font-size:.85rem;color:var(--muted)}
+.notes ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.ex{font-size:.75rem;color:var(--ok)}
+.sub{font-size:.85rem;margin:4px 0 -6px;color:var(--sea);font-weight:600}
+.lines strong.v{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.terbox{display:flex;flex-direction:column;gap:12px}
+.plist{display:flex;flex-direction:column;gap:10px}
+.part{display:grid;grid-template-columns:1.3fr .8fr .8fr auto;gap:8px;align-items:end;padding:10px;border:1px dashed var(--line);border-radius:8px}
+@media (max-width:480px){.part{grid-template-columns:1fr 1fr}.part label:first-child{grid-column:1/-1}}
+.btn{font:inherit;font-size:.9rem;padding:8px 12px;border-radius:6px;border:1px solid var(--sea);background:transparent;color:var(--sea);cursor:pointer;align-self:flex-start}
+.btn:hover{background:var(--bg)}
+.btn:focus-visible{outline:2px solid var(--sea);outline-offset:2px}
+.del{border-color:var(--line);color:var(--muted);padding:9px 10px}
+td.tot{font-weight:600}
+.print{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:16px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:600;padding:11px 16px;font-size:1rem}
+.btn.primary:hover{filter:brightness(1.08);background:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input[type=text]{font-family:var(--mono)}
+#cfIn,#pnIn,#dpIn{text-transform:uppercase}
+.row.three{grid-template-columns:.6fr 1.6fr .6fr}
+@media (max-width:420px){.row.three{grid-template-columns:1fr 1fr}.row.three label:nth-child(2){grid-column:1/-1;order:-1}}
+[hidden]{display:none!important}
+.compick{gap:12px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.segopt{flex-direction:row;cursor:pointer}
+.segopt input{position:absolute;opacity:0;width:1px;height:1px}
+.segopt .card{flex:1;display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--muted);transition:border-color .15s,background .15s,transform .15s}
+.segopt:hover .card{border-color:var(--muted)}
+.segopt .ico{width:56px;height:56px;flex:none;transition:transform .25s}
+.segopt .txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.segopt .txt strong{font-size:1.15rem;color:var(--fg)}
+.segopt .txt em{font-style:normal;font-size:.8rem}
+.segopt .txt small{font-family:var(--mono);color:var(--muted);font-size:.72rem;margin-top:3px}
+.segopt input:checked+.card.li{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.segopt input:checked+.card.pi{border-color:var(--sea);background:var(--sea-soft);color:var(--sea)}
+.segopt input:checked+.card.li .txt strong{color:var(--accent)}
+.segopt input:checked+.card.pi .txt strong{color:var(--sea)}
+.segopt input:checked+.card .ico{transform:scale(1.08)}
+@media (max-width:420px){.segopt .card{flex-direction:column;align-items:flex-start;gap:8px;padding:12px}.segopt .ico{width:48px;height:48px}}
+@media (prefers-reduced-motion:reduce){.segopt .card,.segopt .ico{transition:none}}
+.segopt input:focus-visible+.card{outline:2px solid var(--sea);outline-offset:2px}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="tag" id="tagCom">Comune di Livorno · anno d'imposta 2026</span>
+    <h1>Calcolo IMU seconda casa e terreni</h1>
+    <p>Scegli il comune e inserisci i dati della visura catastale: rendita della casa, eventuale pertinenza, quota di possesso e mesi. Per i terreni serve il reddito dominicale.</p>
+  </header>
+
+  <section class="panel compick">
+    <h2 id="comLbl">Comune dove si trovano l'immobile o il terreno</h2>
+    <div class="seg" role="radiogroup" aria-labelledby="comLbl">
+      <label class="segopt" for="comLI"><input type="radio" name="com" id="comLI" value="LI" checked><span class="card li"><svg viewBox="0 0 64 64" class="ico" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+  <path d="M8 58h48M12 58v-5h40v5" />
+  <path d="M22 53V30h20v23M20 30h24M24 30v-3h16v3" />
+  <circle cx="32" cy="9" r="2.6" fill="currentColor" stroke="none"/>
+  <path d="M29 27l1-10.5 2-3.5 2 3.5 1 10.5M30 15l-3 5M34 15l3 4" />
+  <g fill="currentColor" stroke="none">
+    <circle cx="15" cy="38" r="2.6"/><path d="M11.5 53c0-5 .5-9.5 3.5-12.5 3 2 4 5 4.5 7l2.5 1v4.5z"/>
+    <circle cx="49" cy="38" r="2.6"/><path d="M52.5 53c0-5-.5-9.5-3.5-12.5-3 2-4 5-4.5 7l-2.5 1v4.5z"/>
+  </g>
+  <g fill="currentColor" stroke="none" opacity=".45">
+    <circle cx="26" cy="41" r="2"/><path d="M23.5 53c0-4 .4-7 2.5-9 2 1.6 2.8 4 3 5.5v3.5z"/>
+    <circle cx="38" cy="41" r="2"/><path d="M40.5 53c0-4-.4-7-2.5-9-2 1.6-2.8 4-3 5.5v3.5z"/>
+  </g>
+  <path d="M18 44l4-2M46 44l-4-2" stroke-dasharray="1.5 1.5" stroke-width="1.4"/>
+</svg><span class="txt"><strong>Livorno</strong><em>Quattro Mori</em><small>codice ente E625</small></span></span></label>
+      <label class="segopt" for="comPI"><input type="radio" name="com" id="comPI" value="PI"><span class="card pi"><svg viewBox="0 0 64 64" class="ico" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+  <path d="M10 58h44" />
+  <g transform="rotate(5 32 57)">
+    <rect x="23" y="14" width="18" height="43" rx="1.5"/>
+    <rect x="26" y="6" width="12" height="8" rx="1"/>
+    <path d="M23 21h18M23 27h18M23 33h18M23 39h18M23 45h18M23 51h18M22 14h20" stroke-width="1.6"/>
+    <path d="M27 16.5v3M32 16.5v3M37 16.5v3M27 22.5v3M32 22.5v3M37 22.5v3M27 28.5v3M32 28.5v3M37 28.5v3M27 34.5v3M32 34.5v3M37 34.5v3M27 40.5v3M32 40.5v3M37 40.5v3M27 46.5v3M32 46.5v3M37 46.5v3" stroke-width="1.6"/>
+    <path d="M30 8.5v3M34 8.5v3" stroke-width="1.6"/>
+  </g>
+</svg><span class="txt"><strong>Pisa</strong><em>Torre pendente</em><small>codice ente G702</small></span></span></label>
+    </div>
+    <p class="note">L'IMU si paga al comune in cui si trova l'immobile, non a quello di residenza. Se una persona ha beni in tutti e due i comuni, fai un calcolo per ciascuno: servono due righi F24 separati, uno per ogni codice ente.</p>
+  </section>
+
+  <div class="grid">
+    <form class="panel" id="f" onsubmit="return false">
+      <h2>Immobile</h2>
+      <div class="row">
+        <label for="rendita">Rendita catastale (€) <small>dalla visura, non rivalutata</small>
+          <input id="rendita" type="number" min="0" step="0.01" inputmode="decimal" placeholder="es. 650,00">
+        </label>
+        <label for="cat">Categoria catastale
+          <select id="cat">
+            <option value="160" selected>A/2 – A/7, A/11 (abitazione)</option>
+            <option value="160">A/1, A/8, A/9 (lusso, non principale)</option>
+            <option value="80">A/10 (ufficio)</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset>
+        <legend>Pertinenza (facoltativa)</legend>
+        <label class="check" for="hasPert"><input id="hasPert" type="checkbox"> Garage, cantina o posto auto accatastato a parte</label>
+        <div class="row" id="pertRow" hidden>
+          <label for="rendPert">Rendita pertinenza (€)
+            <input id="rendPert" type="number" min="0" step="0.01" inputmode="decimal" placeholder="es. 120,00">
+          </label>
+          <label for="catPert">Categoria
+            <select id="catPert">
+              <option value="160">C/6 garage / posto auto</option>
+              <option value="160">C/2 cantina / magazzino</option>
+              <option value="160">C/7 tettoia</option>
+            </select>
+          </label>
+        </div>
+        <p class="note">Per una seconda casa la pertinenza paga con la stessa aliquota dell'abitazione.</p>
+      </fieldset>
+
+      <h2>La tua posizione</h2>
+      <div class="row">
+        <label for="quota">Quota di possesso (%)
+          <input id="quota" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="es. 25 per 1/4">
+        </label>
+        <label for="mesi">Mesi di possesso nel 2026 <small>conta il mese se posseduto più di 15 giorni</small>
+          <input id="mesi" type="number" min="0" max="12" step="1" inputmode="numeric" placeholder="12 = tutto l'anno">
+        </label>
+      </div>
+
+      <label for="uso">Come è usato l'immobile
+        <select id="uso">
+
+        </select>
+      </label>
+      <div class="rate">Aliquota applicata: <span id="aliqTxt">10,6‰</span></div>
+      <p class="note" id="usoNote" hidden></p>
+
+      <label class="check" for="inag"><input id="inag" type="checkbox"> Fabbricato inagibile/inabitabile o di interesse storico (base imponibile ridotta del 50%)</label>
+
+      <h2>Terreni agricoli</h2>
+      <label class="check" for="hasTer"><input id="hasTer" type="checkbox"> Possiedo terreni agricoli in questo comune</label>
+      <div id="terBox" class="terbox">
+        <p class="note">Una riga per particella: il <strong>reddito dominicale</strong> si legge nella visura catastale dei terreni (non il reddito agrario).</p>
+        <div id="particelle" class="plist"></div>
+        <button type="button" id="addP" class="btn">+ Aggiungi particella</button>
+        <label class="check" for="esente"><input id="esente" type="checkbox"> Sono coltivatore diretto o IAP iscritto alla previdenza agricola e conduco io il terreno (esente)</label>
+        <div class="rate">Aliquota terreni: <span id="aliqTer">10,6‰</span> · base = reddito dominicale × 1,25 × 135</div>
+      </div>
+    </form>
+
+    <section class="panel receipt" aria-live="polite">
+      <h2>La tua IMU 2026</h2>
+      <div class="big"><span>Totale annuo (fabbricati + terreni)</span><strong id="tot">€ 0,00</strong></div>
+      <h3 class="sub">Fabbricati · codice 3918</h3>
+      <div class="lines">
+        <div><span>Base imponibile immobile</span><span id="base">—</span></div>
+        <div><span>Aliquota</span><span id="aliq">—</span></div>
+        <div><span>IMU sull'intero immobile (12 mesi)</span><span id="intero">—</span></div>
+        <div><span>Tua quota × mesi</span><span id="qm">—</span></div>
+        <div><strong>IMU fabbricati</strong><strong class="v" id="totFab">—</strong></div>
+      </div>
+      <div id="terRes">
+        <h3 class="sub">Terreni agricoli · codice 3914</h3>
+        <div class="lines">
+          <div><span>Particelle conteggiate</span><span id="nPart">—</span></div>
+          <div><span>Base imponibile (tue quote)</span><span id="baseTer">—</span></div>
+          <div><strong>IMU terreni</strong><strong class="v" id="totTer">—</strong></div>
+        </div>
+      </div>
+
+      <h2>Versamenti con F24</h2>
+      <div class="f24">
+        <table>
+          <thead><tr><th>Rata</th><th>Scadenza</th><th>Codice</th><th class="n">Importo</th></tr></thead>
+          <tbody id="f24body"></tbody>
+        </table>
+      </div>
+      <p class="note">Sezione IMU e altri tributi locali · codice ente <strong id="codEnte">E625</strong> (<span id="nomEnte">Livorno</span>) · un rigo per codice tributo · barra "Acconto" o "Saldo" · indica il numero di immobili. Ogni rigo si arrotonda all'euro: per difetto fino a 49 centesimi, per eccesso da 50.</p>
+
+      <div class="print">
+        <h2>Stampa l'F24</h2>
+        <p class="note">Dati del contribuente per l'F24: tutti facoltativi. Se li lasci vuoti li scrivi a mano sul foglio.</p>
+        <div class="row">
+          <label for="cfIn">Codice fiscale<input id="cfIn" type="text" maxlength="16" autocomplete="off" spellcheck="false"></label>
+          <label for="sxIn">Sesso<select id="sxIn"><option value=""></option><option>M</option><option>F</option></select></label>
+        </div>
+        <div class="row">
+          <label for="cogIn">Cognome<input id="cogIn" type="text" maxlength="40" autocomplete="off"></label>
+          <label for="nomIn">Nome<input id="nomIn" type="text" maxlength="40" autocomplete="off"></label>
+        </div>
+        <div class="row">
+          <label for="dnIn">Data di nascita<input id="dnIn" type="date"></label>
+          <label for="cnIn">Comune di nascita<input id="cnIn" type="text" maxlength="40" autocomplete="off"></label>
+        </div>
+        <div class="row three">
+          <label for="pnIn">Prov. nascita<input id="pnIn" type="text" maxlength="2" autocomplete="off"></label>
+          <label for="dcIn">Comune domicilio fiscale<input id="dcIn" type="text" maxlength="40" autocomplete="off"></label>
+          <label for="dpIn">Prov.<input id="dpIn" type="text" maxlength="2" autocomplete="off"></label>
+        </div>
+        <label for="dvIn">Via e numero civico<input id="dvIn" type="text" maxlength="60" autocomplete="off"></label>
+        <button type="button" id="pdfBtn" class="btn primary">Scarica F24 in PDF</button>
+        <p class="note" id="pdfMsg">Il PDF ha due pagine con il modello F24 completo, una per giugno e una per dicembre, con la sezione IMU già compilata. Puoi stamparlo, portarlo in banca o alla posta, o copiare i righi nell'home banking. I dati che scrivi qui non vengono salvati.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel notes">
+    <h2>Come è calcolato</h2>
+    <ul>
+      <li>Base imponibile = rendita × 1,05 × moltiplicatore (160 per abitazioni e pertinenze C/2, C/6, C/7; 80 per A/10).</li>
+      <li>IMU = base × aliquota × quota di possesso × mesi / 12. Ogni comproprietario paga per la propria quota con un suo F24.</li>
+      <li><strong>Livorno 2026:</strong> 10,6‰ per seconde case, terreni agricoli e tutti gli immobili non compresi nelle altre categorie; 5,3‰ per le abitazioni a canone concordato vistato, con imposta ridotta al 75%.</li>
+      <li><strong>Pisa 2026:</strong> aliquote invariate rispetto al 2025 (delibera C.C. n. 56 del 19/12/2024). 10,6‰ per seconde case, terreni agricoli e aree fabbricabili; 4‰ per le abitazioni locate a canone concordato (art. 2 c. 3 L. 431/98) come abitazione principale dell'inquilino o a studenti universitari (art. 5 c. 2), con imposta ridotta al 75%; 10,1‰ per A/10, B e C usati direttamente dal proprietario per un'attività.</li>
+      <li>Comodato a genitori/figli: la legge riduce la base del 50% solo se il contratto è registrato e il comodante possiede al massimo un'altra abitazione nello stesso comune, dove risiede. Né Livorno né Pisa prevedono un'aliquota dedicata, quindi resta il 10,6‰.</li>
+      <li>Terreni agricoli: base = reddito dominicale × 1,25 × 135, aliquota 10,6‰, poi × quota × mesi / 12. Esenti se posseduti e condotti da coltivatori diretti o IAP, oppure se ricadono in zone montane o collinari delimitate dalla circolare 9/1993: in quel caso togli la particella.</li>
+      <li>Acconto e saldo sono metà ciascuno perché sia a Livorno sia a Pisa le aliquote 2026 coincidono con quelle usate in acconto. Verifica sempre sul sito del Comune o sul portale del MEF prima di pagare.</li>
+    </ul>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+let LAST=null;
+const $=id=>document.getElementById(id);
+const eur=n=>"€ "+n.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=id=>{const v=parseFloat($(id).value);return isNaN(v)?0:v};
+const COMUNI={
+  LI:{nome:"Livorno",ente:"E625",ter:10.6,usi:[
+    ["ord","A disposizione / uso proprio / locato a canone libero",10.6,0],
+    ["conc","Locato a canone concordato (L. 431/98, contratto vistato)",5.3,1],
+    ["comod","Comodato a genitori o figli (requisiti di legge)",10.6,0]]},
+  PI:{nome:"Pisa",ente:"G702",ter:10.6,usi:[
+    ["ord","A disposizione / uso proprio / locato a canone libero",10.6,0],
+    ["conc","Locato a canone concordato come abitazione principale dell'inquilino",4,1],
+    ["stud","Locato a canone concordato a studenti universitari",4,1],
+    ["comod","Comodato a genitori o figli (requisiti di legge)",10.6,0],
+    ["att","A/10, B o C usato direttamente per la propria attività",10.1,0]]}
+};
+let comAtt=null;
+function setComune(){
+  const c=document.querySelector('input[name=com]:checked').value;
+  if(c===comAtt) return; comAtt=c;
+  const C=COMUNI[c], sel=$("uso"), prev=sel.value;
+  sel.innerHTML=C.usi.map(u=>`<option value="${u[0]}">${u[1]}</option>`).join("");
+  if(C.usi.some(u=>u[0]===prev)) sel.value=prev;
+  $("tagCom").textContent="Comune di "+C.nome+" · anno d'imposta 2026";
+  $("codEnte").textContent=C.ente; $("nomEnte").textContent=C.nome;
+  $("aliqTer").textContent=C.ter.toLocaleString("it-IT")+"‰";
+}
+function calc(){
+  setComune();
+  const C=COMUNI[comAtt];
+  $("pertRow").hidden=!$("hasPert").checked;
+  const uso=$("uso").value;
+  const U=C.usi.find(u=>u[0]===uso)||C.usi[0];
+  let aliq=U[2];          // per mille
+  const rid75=U[3]===1;
+  $("usoNote").hidden=!(rid75&&comAtt==="LI");
+  $("usoNote").textContent="A Livorno l'aliquota ridotta vale solo se il contratto ha il visto di conformità di un'associazione firmataria degli accordi territoriali.";
+  let base=num("rendita")*1.05*parseFloat($("cat").value);
+  if($("hasPert").checked) base+=num("rendPert")*1.05*parseFloat($("catPert").value);
+  let rid=1;
+  if(uso==="comod") rid*=0.5;
+  if($("inag").checked) rid*=0.5;
+  const baseNetta=base*rid;
+  let imu=baseNetta*aliq/1000;
+  if(rid75) imu*=0.75;
+  const quota=Math.min(Math.max(num("quota"),0),100)/100;
+  const mesi=Math.min(Math.max(Math.round(num("mesi")),0),12);
+  const tua=imu*quota*mesi/12;
+  const acc=Math.round(tua/2*100)/100;
+  const sal=Math.round((tua-acc)*100)/100;
+  $("aliqTxt").textContent=aliq.toLocaleString("it-IT")+"‰"+(rid75?" con imposta ridotta al 75%":"")+(uso==="comod"?" su base ridotta del 50%":"");
+  $("base").textContent=eur(baseNetta)+(rid<1?" (ridotta)":"");
+  $("aliq").innerHTML='<span class="rate-pill">'+aliq.toLocaleString("it-IT")+"‰</span>";
+  $("intero").textContent=eur(imu);
+  $("qm").textContent=(quota*100).toLocaleString("it-IT")+"% × "+mesi+"/12";
+  $("totFab").textContent=eur(tua);
+
+  // Terreni agricoli
+  const ter=$("hasTer").checked;
+  $("terBox").hidden=!ter; $("terRes").hidden=!ter;
+  let baseTer=0, imuTer=0, n=0;
+  if(ter){
+    document.querySelectorAll(".part").forEach(p=>{
+      const rd=parseFloat(p.querySelector(".rd").value)||0;
+      const q=Math.min(Math.max(parseFloat(p.querySelector(".pq").value)||0,0),100)/100;
+      const m=Math.min(Math.max(Math.round(parseFloat(p.querySelector(".pm").value)||0),0),12);
+      const b=rd*1.25*135;
+      baseTer+=b*q; imuTer+=b*C.ter/1000*q*m/12; n++;
+    });
+    if($("esente").checked) imuTer=0;
+  }
+  $("nPart").textContent=n+($("esente").checked&&ter?" (esenti)":"");
+  $("baseTer").textContent=eur(baseTer);
+  $("totTer").textContent=eur(imuTer);
+  $("tot").textContent=eur(tua+imuTer);
+
+  // F24: un rigo per codice tributo, arrotondato all'euro
+  const rows=[];
+  const split=(v)=>{const a=Math.round(v/2*100)/100;return [a,Math.round((v-a)*100)/100]};
+  const [fa,fs]=split(tua), [ta,ts]=split(imuTer);
+  const r=v=>Math.round(v);
+  const line=(rata,data,cod,v)=>v>0?`<tr><td>${rata}</td><td>${data}</td><td>${cod}</td><td class="n">${eur(v)} → ${r(v)} €</td></tr>`:"";
+  let h="";
+  h+=line("Acconto","16 giugno 2026","3918",fa);
+  if(ter) h+=line("Acconto","16 giugno 2026","3914",ta);
+  h+=`<tr><td colspan="3" class="tot">Totale F24 giugno</td><td class="n tot">${r(fa)+(ter?r(ta):0)} €</td></tr>`;
+  h+=line("Saldo","16 dicembre 2026","3918",fs);
+  if(ter) h+=line("Saldo","16 dicembre 2026","3914",ts);
+  h+=`<tr><td colspan="3" class="tot">Totale F24 dicembre</td><td class="n tot">${r(fs)+(ter?r(ts):0)} €</td></tr>`;
+  $("f24body").innerHTML=h;
+  LAST={C,tua,imuTer,fa,fs,ta,ts,ter,nPart:n,nFab:1+($("hasPert").checked?1:0),esente:$("esente").checked};
+}
+let pid=0;
+function addPart(rd="",q="",m=""){
+  pid++;
+  const d=document.createElement("div");d.className="part";
+  d.innerHTML=`<label for="rd${pid}">Reddito dominicale (€)<input id="rd${pid}" class="rd" type="number" min="0" step="0.01" value="${rd}" inputmode="decimal" placeholder="es. 85,00"></label>
+  <label for="pq${pid}">Quota %<input id="pq${pid}" class="pq" type="number" min="0" max="100" step="0.01" value="${q}" inputmode="decimal" placeholder="%"></label>
+  <label for="pm${pid}">Mesi<input id="pm${pid}" class="pm" type="number" min="0" max="12" step="1" value="${m}" inputmode="numeric" placeholder="12"></label>
+  <button type="button" class="btn del" aria-label="Rimuovi particella">✕</button>`;
+  d.querySelectorAll("input").forEach(e=>e.addEventListener("input",calc));
+  d.querySelector(".del").addEventListener("click",()=>{d.remove();calc()});
+  $("particelle").appendChild(d);calc();
+}
+$("addP").addEventListener("click",()=>addPart());
+document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",calc));
+$("hasTer").addEventListener("change",calc);
+document.querySelectorAll('input[name=com]').forEach(e=>e.addEventListener("change",calc));
+addPart();
+
+// ---------- PDF F24 (impaginazione del modello ordinario) ----------
+function f24pdf(){
+  const {jsPDF}=window.jspdf;
+  const d=new jsPDF({unit:"mm",format:"a4"});
+  const L=LAST, C=L.C;
+  const X0=8, X1=202, W=X1-X0;
+  const INK=[20,20,20], LBL=[70,70,70], SH=[228,228,228], SH2=[244,244,244];
+  const v=id=>($(id).value||"").trim();
+  const A={cf:v("cfIn").toUpperCase().replace(/\s/g,""),cog:v("cogIn").toUpperCase(),nom:v("nomIn").toUpperCase(),
+    dn:v("dnIn"),sx:v("sxIn").toUpperCase(),cn:v("cnIn").toUpperCase(),pn:v("pnIn").toUpperCase(),
+    dc:v("dcIn").toUpperCase(),dp:v("dpIn").toUpperCase(),dv:v("dvIn").toUpperCase()};
+  const eur=n=>Math.round(n).toLocaleString("it-IT")+",00";
+  const lw=w=>d.setLineWidth(w);
+  const lbl=(t,x,y,sz=5.2,al="left")=>{d.setFont("helvetica","normal");d.setFontSize(sz);d.setTextColor(...LBL);d.text(t,x,y,{align:al});};
+  const val=(t,x,y,al="left",sz=9,f="courier")=>{if(!t)return;d.setFont(f,"bold");d.setFontSize(sz);d.setTextColor(...INK);d.text(String(t),x,y,{align:al});};
+  const box=(x,y,w,h,fill)=>{d.setDrawColor(...INK);lw(.2);if(fill){d.setFillColor(...fill);d.rect(x,y,w,h,"FD");}else d.rect(x,y,w,h);};
+  const field=(x,y,w,h,label,text,al="left")=>{lbl(label,x+.8,y+2);box(x,y+2.6,w,h-2.6);val(text,al==="center"?x+w/2:x+1.2,y+h-1.3,al);};
+  const chars=(x,y,n,cw,h,s)=>{for(let i=0;i<n;i++){box(x+i*cw,y,cw,h);if(s&&s[i])val(s[i],x+i*cw+cw/2,y+h-1.3,"center");}};
+  const vlabel=(t,x,y0,y1,bold)=>{d.setFont("helvetica",bold?"bold":"normal");d.setFontSize(bold?6.5:5.2);d.setTextColor(...INK);d.text(t,x,(y0+y1)/2+d.getTextWidth(t)/2,{angle:90});};
+  const sezTitle=(y,t,extra)=>{d.setFillColor(...INK);d.rect(X0,y,W,4.2,"F");d.setFont("helvetica","bold");d.setFontSize(7);d.setTextColor(255,255,255);d.text(t,X0+2,y+3);if(extra){d.setFont("helvetica","normal");d.setFontSize(5.5);d.text(extra,X1-2,y+3,{align:"right"});}};
+  // tabella generica: cols=[[titolo,larghezza,tipo]] ; tipo: "c" codice, "x" casella, "m" importo
+  function table(y,cols,rows,nRows,rh=4.6){
+    const hh=6.4; let x=X0;
+    cols.forEach(([t,w])=>{box(x,y,w,hh,SH);d.setFont("helvetica","normal");d.setFontSize(4.8);d.setTextColor(...INK);
+      const ln=d.splitTextToSize(t,w-1);d.text(ln,x+w/2,y+2.3+(ln.length===1?1.2:0),{align:"center"});x+=w;});
+    y+=hh;
+    for(let r=0;r<nRows;r++){x=X0;const row=rows[r]||[];
+      cols.forEach(([t,w,k],i)=>{box(x,y,w,rh,k==="m"?null:null);
+        if(k==="m"){d.setDrawColor(...LBL);lw(.15);d.line(x+w-5.4,y+rh-1.4,x+w-5.4,y+rh);d.setDrawColor(...INK);}
+        const s=row[i];if(s){if(k==="m"){const [eu,ce]=s.split(",");val(eu,x+w-6.2,y+rh-1.1,"right",8.5);val(ce,x+w-1,y+rh-1.1,"right",8.5);}else val(s,x+w/2,y+rh-1.1,"center",8.5);}
+        x+=w;});
+      y+=rh;}
+    return y;
+  }
+  function totals(y,cols,lettere,debito,credito){
+    // trova x delle ultime due colonne (debito/credito)
+    let x=X0;cols.slice(0,-2).forEach(c=>x+=c[1]);const wd=cols[cols.length-2][1],wc=cols[cols.length-1][1];
+    lbl("TOTALE",x-12,y+3.3,6);
+    d.setFont("helvetica","bold");d.setFontSize(6.5);d.setTextColor(...INK);
+    box(x,y,wd,4.6,SH2);box(x+wd,y,wc,4.6,SH2);
+    lbl(lettere[0],x+1,y+3.2,6);lbl(lettere[1],x+wd+1,y+3.2,6);
+    val(debito,x+wd-1,y+3.5,"right",8.5);val(credito,x+wd+wc-1,y+3.5,"right",8.5);
+    box(X1+0.01-0.01,y,0,0);
+    return y+4.6;
+  }
+  function saldoBox(y,lettera,s){lbl("SALDO ("+lettera+")",X1-34,y+3.3,5.5,"right");box(X1-33,y,33,4.6);val("+",X1-31,y+3.5,"left",8.5);val(s,X1-1,y+3.5,"right",8.5);return y+4.6;}
+
+  function page(rata){
+    const isAcc=rata==="acc";
+    const v3918=isAcc?L.fa:L.fs, v3914=isAcc?L.ta:L.ts;
+    const righe=[];
+    if(v3918>0) righe.push([C.ente,"","",isAcc?"X":"",isAcc?"":"X",String(L.nFab),"3918","","2026",eur(v3918),""]);
+    if(L.ter&&v3914>0) righe.push([C.ente,"","",isAcc?"X":"",isAcc?"":"X",String(L.nPart),"3914","","2026",eur(v3914),""]);
+    const totG=righe.reduce((a,r)=>a+Math.round(isAcc?(r[6]==="3918"?v3918:v3914):(r[6]==="3918"?v3918:v3914)),0);
+    // intestazione
+    d.setFont("helvetica","bold");d.setFontSize(22);d.setTextColor(...INK);d.text("Modello F24",X0,17);
+    lbl("DELEGA IRREVOCABILE A:",64,10.5,5.5);box(64,11.5,78,5);
+    lbl("AGENZIA",64,20.5,5.5);box(64,21.5,58,5);lbl("PROV.",124,20.5,5.5);box(124,21.5,18,5);
+    d.setFont("helvetica","bold");d.setFontSize(6.5);d.setTextColor(...INK);
+    d.text(["PER L'ACCREDITO","ALLA TESORERIA COMPETENTE"],X1,13,{align:"right"});
+    lbl((isAcc?"1ª rata · ACCONTO · scadenza 16 giugno 2026":"2ª rata · SALDO · scadenza 16 dicembre 2026"),X1,24.5,6,"right");
+    // CONTRIBUENTE
+    let y=29; const yC0=y;
+    box(X0,y,W,45); d.setFillColor(...SH);d.rect(X0,y,6,45,"FD"); vlabel("CONTRIBUENTE",X0+4.2,y,y+45,true);
+    lbl("CODICE FISCALE",X0+8,y+4.2,6);chars(X0+32,y+1.2,16,5.2,5,A.cf);
+    box(X0+120,y+1.6,3.5,3.5);lbl("barrare in caso di anno d'imposta non coincidente con anno solare",X0+125,y+4.2,4.8);
+    y+=8;
+    box(X0+6,y,6,17.5,SH2);d.setFontSize(4.6);vlabel("DATI ANAGRAFICI",X0+10,y,y+17.5);
+    field(X0+13,y,97,7.5,"cognome, denominazione o ragione sociale",A.cog);
+    field(X0+112,y,X1-(X0+112)-1,7.5,"nome",A.nom);
+    y+=8;
+    lbl("data di nascita",X0+13.8,y+2);const dn=A.dn.split("-");const gg=dn.length===3?dn[2]+dn[1]+dn[0]:"";
+    lbl("giorno",X0+14,y+9.6,4.2);lbl("mese",X0+24.5,y+9.6,4.2);lbl("anno",X0+36,y+9.6,4.2);
+    chars(X0+13,y+2.6,8,4.2,4.9,gg);
+    field(X0+50,y,16,7.5,"sesso (M o F)",A.sx,"center");
+    field(X0+68,y,108,7.5,"comune (o Stato estero) di nascita",A.cn);
+    field(X0+178,y,X1-(X0+178)-1,7.5,"prov.",A.pn,"center");
+    y+=10;
+    box(X0+6,y,6,9,SH2);vlabel("DOMIC.",X0+10,y,y+9);
+    field(X0+13,y,70,8,"comune",A.dc);field(X0+85,y,14,8,"prov.",A.dp,"center");field(X0+101,y,X1-(X0+101)-1,8,"via e numero civico",A.dv);
+    y+=9.5;
+    lbl("CODICE FISCALE del coobbligato, erede,",X0+8,y+2.4,4.8);lbl("genitore, tutore o curatore fallimentare",X0+8,y+4.6,4.8);
+    chars(X0+46,y+0.8,16,4.6,4.6,"");lbl("codice identificativo",X0+125,y+3.4,4.8);box(X0+145,y+0.8,14,4.6);
+    y=yC0+47;
+    // ERARIO
+    sezTitle(y,"SEZIONE ERARIO","IMPOSTE DIRETTE - IVA - RITENUTE ALLA FONTE - ALTRI TRIBUTI ED INTERESSI");y+=4.2;
+    const colE=[["codice tributo",30],["rateazione/regione/ prov./mese rif.",40],["anno di riferimento",28],["importi a debito versati",48],["importi a credito compensati",48]];
+    y=table(y,colE,[],4);y=totals(y,colE,["A","B"],"","");y=saldoBox(y,"A-B","");
+    lbl("codice ufficio",X0+1,y-1.4,5);box(X0+16,y-4.6,14,4.6);lbl("codice atto",X0+33,y-1.4,5);box(X0+46,y-4.6,24,4.6);
+    y+=2;
+    // INPS
+    sezTitle(y,"SEZIONE INPS");y+=4.2;
+    const colI=[["codice sede",18],["causale contributo",20],["matricola INPS/codice INPS/ filiale azienda",44],["periodo di riferimento da mm/aaaa",24],["periodo di riferimento a mm/aaaa",24],["importi a debito versati",32],["importi a credito compensati",32]];
+    y=table(y,colI,[],2);y=totals(y,colI,["C","D"],"","");y=saldoBox(y,"C-D","");y+=2;
+    // REGIONI
+    sezTitle(y,"SEZIONE REGIONI");y+=4.2;
+    const colR=[["codice regione",22],["codice tributo",28],["rateazione/ mese rif.",36],["anno di riferimento",28],["importi a debito versati",40],["importi a credito compensati",40]];
+    y=table(y,colR,[],2);y=totals(y,colR,["E","F"],"","");y=saldoBox(y,"E-F","");y+=2;
+    // IMU
+    sezTitle(y,"SEZIONE IMU E ALTRI TRIBUTI LOCALI");y+=4.2;
+    lbl("identificativo operazione",X0+1,y+3.2,5);box(X0+24,y+.6,40,3.8);y+=5;
+    const colM=[["codice ente/ codice comune",20],["Ravv.",9],["Immob. variati",11],["Acconto",11],["Saldo",10],["numero immobili",13],["codice tributo",16],["rateazione/ mese rif.",17],["anno di riferimento",17],["importi a debito versati",35],["importi a credito compensati",35]];
+    colM.forEach(c=>{c[2]=(c[0].startsWith("importi")?"m":"c");});
+    y=table(y,colM,righe,4);
+    lbl("detrazione",X0+1,y+3.3,5.5);box(X0+14,y,30,4.6);
+    y=totals(y,colM,["G","H"],totG>0?totG.toLocaleString("it-IT")+",00":"","");y=saldoBox(y,"G-H",totG>0?totG.toLocaleString("it-IT")+",00":"");y+=2;
+    // ALTRI ENTI
+    sezTitle(y,"SEZIONE ALTRI ENTI PREVIDENZIALI E ASSICURATIVI");y+=4.2;
+    const colA=[["codice ente",16],["codice sede",18],["causale",16],["codice posizione",28],["periodo da mm/aaaa",22],["periodo a mm/aaaa",22],["importi a debito versati",36],["importi a credito compensati",36]];
+    y=table(y,colA,[],1);y=totals(y,colA,["I","L"],"","");y=saldoBox(y,"I-L","");y+=3;
+    // SALDO FINALE
+    box(X0,y,W,8,SH2);d.setFont("helvetica","bold");d.setFontSize(8);d.setTextColor(...INK);d.text("SALDO FINALE",X1-70,y+5.4);
+    lbl("EURO",X1-46,y+5.2,6);box(X1-38,y+1.2,37,5.6);val("+",X1-36,y+5.4,"left",10);val(totG.toLocaleString("it-IT")+",00",X1-2,y+5.4,"right",10);
+    y+=10;
+    // ESTREMI DEL VERSAMENTO
+    sezTitle(y,"ESTREMI DEL VERSAMENTO","DA COMPILARE A CURA DI BANCA/POSTE/AGENTE DELLA RISCOSSIONE");y+=4.2;
+    box(X0,y,W,22);
+    lbl("DATA",X0+2,y+3.5,5.5);chars(X0+2,y+4.5,8,4.2,4.8,"");lbl("giorno",X0+3,y+11.3,4.2);lbl("mese",X0+11.5,y+11.3,4.2);lbl("anno",X0+23,y+11.3,4.2);
+    lbl("CODICE BANCA/POSTE/AGENTE DELLA RISCOSSIONE",X0+45,y+3.5,5.5);lbl("ABI",X0+45,y+7.8,5);box(X0+51,y+4.6,26,4.6);lbl("CAB/SPORTELLO",X0+80,y+7.8,5);box(X0+97,y+4.6,26,4.6);
+    lbl("Pagamento effettuato con assegno bancario/circolare/postale",X0+2,y+16,5);lbl("n.ro",X0+62,y+16,5);box(X0+67,y+13,40,4.4);lbl("cod. ABI",X0+110,y+16,5);box(X0+119,y+13,18,4.4);
+    lbl("FIRMA",X0+150,y+3.5,5.5);d.setDrawColor(...LBL);d.line(X0+150,y+18,X1-3,y+18);
+    lbl("Fac-simile compilato dal calcolatore IMU "+C.nome+" 2026 (codice ente "+C.ente+"). Controlla i dati prima di pagare. Importi arrotondati all'euro su ogni rigo.",X0,y+26,5.5);
+  }
+  page("acc");d.addPage();page("sal");
+  return d.output("arraybuffer");
+}
+
+(async()=>{
+  const btn=$("pdfBtn"), msg=$("pdfMsg");
+  let dl=null;
+  const inClaude=!!(window.claude&&window.claude.use);
+  if(inClaude){try{dl=await window.claude.use("downloads");}catch(e){dl=null}}
+  if(!dl){
+    // fuori da Claude (es. GitHub Pages): scaricamento normale del browser
+    if(inClaude){btn.disabled=true;msg.textContent="Il salvataggio del PDF non è disponibile in questa vista.";return;}
+    dl={save:async({filename,data})=>{const u=URL.createObjectURL(new Blob([data],{type:"application/pdf"}));const a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return {status:"saved"};}};
+  }
+  btn.addEventListener("click",async()=>{
+    if(!window.jspdf){msg.textContent="Il generatore PDF non si è caricato. Ricarica la pagina e riprova.";return;}
+    calc();
+    const c=LAST.C.nome;
+    try{
+      await dl.save({filename:"F24_IMU_2026_"+c+".pdf",data:f24pdf()});
+      msg.textContent="PDF salvato. Aprilo e stampalo dal visualizzatore PDF.";
+    }catch(e){
+      if(e&&e.code==="declined") msg.textContent="Salvataggio annullato.";
+      else if(e&&e.code==="rate_limited") msg.textContent="C'è già una richiesta di salvataggio aperta: attendi qualche secondo e riprova.";
+      else msg.textContent="Non è stato possibile salvare il PDF ("+(e&&e.code||"errore")+").";
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
