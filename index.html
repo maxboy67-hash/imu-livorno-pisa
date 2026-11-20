@@ -75,6 +75,8 @@ td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
 .btn:focus-visible{outline:2px solid var(--sea);outline-offset:2px}
 .del{border-color:var(--line);color:var(--muted);padding:9px 10px}
 td.tot{font-weight:600}
+.paid{margin-top:4px}
+.paidtag{font-size:.7rem;padding:1px 6px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-left:4px;white-space:nowrap}
 .print{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:16px}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:600;padding:11px 16px;font-size:1rem}
 .btn.primary:hover{filter:brightness(1.08);background:var(--accent)}
@@ -236,6 +238,14 @@ input[type=text]{font-family:var(--mono)}
           <tbody id="f24body"></tbody>
         </table>
       </div>
+      <fieldset class="paid">
+        <legend>Acconto già pagato a giugno (facoltativo)</legend>
+        <p class="note">Se hai già pagato l'acconto, scrivi quanto hai versato su ogni rigo del tuo F24 di giugno. Il saldo di dicembre viene calcolato a conguaglio: imposta dell'anno meno quello che hai pagato davvero. Se lasci vuoto, il calcolatore usa l'acconto che ha calcolato lui.</p>
+        <div class="row">
+          <label for="pag3918">Pagato con codice 3918 (€)<input id="pag3918" type="number" min="0" step="0.01" inputmode="decimal" placeholder="es. 323"></label>
+          <label for="pag3914" id="pag3914Lbl">Pagato con codice 3914 (€)<input id="pag3914" type="number" min="0" step="0.01" inputmode="decimal" placeholder="es. 3"></label>
+        </div>
+      </fieldset>
       <p class="note">Sezione IMU e altri tributi locali · codice ente <strong id="codEnte">E625</strong> (<span id="nomEnte">Livorno</span>) · un rigo per codice tributo · barra "Acconto" o "Saldo" · indica il numero di immobili. Ogni rigo si arrotonda all'euro: per difetto fino a 49 centesimi, per eccesso da 50.</p>
 
       <div class="print">
@@ -359,13 +369,17 @@ function calc(){
 
   // F24: un rigo per codice tributo, arrotondato all'euro
   const rows=[];
-  const split=(v)=>{const a=Math.round(v/2*100)/100;return [a,Math.round((v-Math.round(a))*100)/100]};  // saldo a conguaglio
-  const [fa,fs]=split(tua), [ta,ts]=split(imuTer);
+  // saldo a conguaglio: imposta annua meno acconto effettivamente versato (se indicato) o acconto calcolato arrotondato
+  const paidVal=id=>{const x=$(id).value.trim();if(x==="")return null;const v=parseFloat(x.replace(",","."));return isNaN(v)||v<0?null:v;};
+  const split=(v,paid)=>{const a=paid!==null?paid:Math.round(v/2*100)/100;const versato=paid!==null?paid:Math.round(a);return [a,Math.max(0,Math.round((v-versato)*100)/100)]};
+  $("pag3914Lbl").hidden=!ter;
+  const p18=paidVal("pag3918"), p14=ter?paidVal("pag3914"):null;
+  const [fa,fs]=split(tua,p18), [ta,ts]=split(imuTer,p14);
   const r=v=>Math.round(v);
-  const line=(rata,data,cod,v)=>v>0?`<tr><td>${rata}</td><td>${data}</td><td>${cod}</td><td class="n">${eur(v)} → ${r(v)} €</td></tr>`:"";
+  const line=(rata,data,cod,v,pagato)=>v>0?`<tr><td>${rata}${pagato?' <span class="paidtag">pagato</span>':''}</td><td>${data}</td><td>${cod}</td><td class="n">${pagato?eur(v):eur(v)+" → "+r(v)+" €"}</td></tr>`:"";
   let h="";
-  h+=line("Acconto","16 giugno 2026","3918",fa);
-  if(ter) h+=line("Acconto","16 giugno 2026","3914",ta);
+  h+=line("Acconto","16 giugno 2026","3918",fa,p18!==null);
+  if(ter) h+=line("Acconto","16 giugno 2026","3914",ta,p14!==null);
   h+=`<tr><td colspan="3" class="tot">Totale F24 giugno</td><td class="n tot">${r(fa)+(ter?r(ta):0)} €</td></tr>`;
   h+=line("Saldo","16 dicembre 2026","3918",fs);
   if(ter) h+=line("Saldo","16 dicembre 2026","3914",ts);
@@ -388,6 +402,7 @@ function addPart(rd="",q="",m=""){
 $("addP").addEventListener("click",()=>addPart());
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",calc));
 $("hasTer").addEventListener("change",calc);
+["pag3918","pag3914"].forEach(id=>$(id).addEventListener("input",calc));
 document.querySelectorAll('input[name=com]').forEach(e=>e.addEventListener("change",calc));
 addPart();
 
