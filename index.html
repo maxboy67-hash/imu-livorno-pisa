@@ -274,7 +274,7 @@ input[type=text]{font-family:var(--mono)}
       <li><strong>Pisa 2026:</strong> aliquote invariate rispetto al 2025 (delibera C.C. n. 56 del 19/12/2024). 10,6‰ per seconde case, terreni agricoli e aree fabbricabili; 4‰ per le abitazioni locate a canone concordato (art. 2 c. 3 L. 431/98) come abitazione principale dell'inquilino o a studenti universitari (art. 5 c. 2), con imposta ridotta al 75%; 10,1‰ per A/10, B e C usati direttamente dal proprietario per un'attività.</li>
       <li>Comodato a genitori/figli: la legge riduce la base del 50% solo se il contratto è registrato e il comodante possiede al massimo un'altra abitazione nello stesso comune, dove risiede. Né Livorno né Pisa prevedono un'aliquota dedicata, quindi resta il 10,6‰.</li>
       <li>Terreni agricoli: base = reddito dominicale × 1,25 × 135, aliquota 10,6‰, poi × quota × mesi / 12. Esenti se posseduti e condotti da coltivatori diretti o IAP, oppure se ricadono in zone montane o collinari delimitate dalla circolare 9/1993: in quel caso togli la particella.</li>
-      <li>Acconto e saldo sono metà ciascuno perché sia a Livorno sia a Pisa le aliquote 2026 coincidono con quelle usate in acconto. Verifica sempre sul sito del Comune o sul portale del MEF prima di pagare.</li>
+      <li>L'acconto è metà dell'imposta annua; il saldo è a conguaglio (imposta annua meno l'acconto arrotondato già versato, art. 1 c. 762 L. 160/2019), così il totale dell'anno torna sempre all'importo annuo arrotondato. Acconto e saldo usano le stesse aliquote perché sia a Livorno sia a Pisa le aliquote 2026 coincidono con quelle usate in acconto. Verifica sempre sul sito del Comune o sul portale del MEF prima di pagare.</li>
     </ul>
   </section>
 </div>
@@ -330,7 +330,7 @@ function calc(){
   const mesi=Math.min(Math.max(Math.round(num("mesi")),0),12);
   const tua=imu*quota*mesi/12;
   const acc=Math.round(tua/2*100)/100;
-  const sal=Math.round((tua-acc)*100)/100;
+  const sal=Math.round((tua-Math.round(acc))*100)/100;  // saldo a conguaglio: annua meno acconto versato
   $("aliqTxt").textContent=aliq.toLocaleString("it-IT")+"‰"+(rid75?" con imposta ridotta al 75%":"")+(uso==="comod"?" su base ridotta del 50%":"");
   $("base").textContent=eur(baseNetta)+(rid<1?" (ridotta)":"");
   $("aliq").innerHTML='<span class="rate-pill">'+aliq.toLocaleString("it-IT")+"‰</span>";
@@ -359,7 +359,7 @@ function calc(){
 
   // F24: un rigo per codice tributo, arrotondato all'euro
   const rows=[];
-  const split=(v)=>{const a=Math.round(v/2*100)/100;return [a,Math.round((v-a)*100)/100]};
+  const split=(v)=>{const a=Math.round(v/2*100)/100;return [a,Math.round((v-Math.round(a))*100)/100]};  // saldo a conguaglio
   const [fa,fs]=split(tua), [ta,ts]=split(imuTer);
   const r=v=>Math.round(v);
   const line=(rata,data,cod,v)=>v>0?`<tr><td>${rata}</td><td>${data}</td><td>${cod}</td><td class="n">${eur(v)} → ${r(v)} €</td></tr>`:"";
